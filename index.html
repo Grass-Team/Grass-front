@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1"
+  />
+  <title>TurfAnalyser</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/pretendard@latest/dist/web/variable/pretendardvariable-dynamic-subset.css">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="ta-app">
+    <!-- 헤더 -->
+    <div class="ta-logo-wrap">
+      <div class="ta-ring-28">
+        <svg class="logo-icon" viewBox="0 0 29 29" aria-hidden="true">
+          <path d="M14.6071 3.18851V26.5218M22.8567 6.60559L6.35752 23.1048M26.2738 14.8552H2.94043M22.8567 23.1048L6.35752 6.60559"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="ta-brand">TurfAnalyser</div>
+    </div>
+
+    <!-- 상단 Hero -->
+    <section class="ta-section" aria-labelledby="hero-title">
+      <div class="ta-flex-col">
+        <div class="ta-hero">
+          <div class="ta-hero-bg" aria-hidden="true"></div>
+
+          <div class="ta-hero-copy">
+            <h1 id="hero-title" class="ta-hero-title">잔디 컨디션,<br> 업로드 한 번에 체크</h1>
+
+            <ol class="ta-steps">
+              <li class="ta-step">
+                <div class="ta-step-icon" aria-hidden="true">
+                  <svg class="step-svg" viewBox="0 0 49 49" aria-hidden="true">
+                    <path d="M41.7085 30.6838V38.6838C41.7085 39.7446 41.2871 40.7621 40.5369 41.5122C39.7868 42.2623 38.7694 42.6838 37.7085 42.6838H9.7085C8.64763 42.6838 7.63021 42.2623 6.88007 41.5122C6.12992 40.7621 5.7085 39.7446 5.7085 38.6838V30.6838M33.7085 16.6838L23.7085 6.68378M23.7085 6.68378L13.7085 16.6838M23.7085 6.68378V30.6838"
+                          stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+
+                <p class="ta-step-text">운동장 잔디 사진을 업로드하세요</p>
+              </li>
+              <li class="ta-step">
+                <div class="ta-step-icon" aria-hidden="true">
+                  <svg class="step-svg" viewBox="0 0 49 49" aria-hidden="true">
+                    <path d="M42.6077 42.8552L33.9077 34.1552M38.6069 22.8552C38.6069 31.6917 31.4435 38.8552 22.6069 38.8552C13.7704 38.8552 6.60693 31.6917 6.60693 22.8552C6.60693 14.0186 13.7704 6.85516 22.6069 6.85516C31.4435 6.85516 38.6069 14.0186 38.6069 22.8552Z"
+                          stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <p class="ta-step-text">잔디 손상 정도를 정확하게 분석해요</p>
+              </li>
+              <li class="ta-step">
+                <div class="ta-step-icon" aria-hidden="true">
+                  <svg class="step-svg" viewBox="0 0 49 49" fill="none" aria-hidden="true">
+                    <path d="M24.6069 30.8552C27.9206 30.8552 30.6069 28.1689 30.6069 24.8552C30.6069 21.5415 27.9206 18.8552 24.6069 18.8552C21.2932 18.8552 18.6069 21.5415 18.6069 24.8552C18.6069 28.1689 21.2932 30.8552 24.6069 30.8552Z"
+                          stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M39.4069 30.8552C39.1407 31.4584 39.0613 32.1276 39.1789 32.7763C39.2966 33.4251 39.6059 34.0238 40.0669 34.4952L40.1869 34.6152C40.5588 34.9867 40.8539 35.4278 41.0552 35.9134C41.2565 36.399 41.3601 36.9195 41.3601 37.4452C41.3601 37.9708 41.2565 38.4913 41.0552 38.9769C40.8539 39.4625 40.5588 39.9037 40.1869 40.2752C39.8154 40.6471 39.3743 40.9421 38.8887 41.1434C38.4031 41.3447 37.8826 41.4483 37.3569 41.4483C36.8313 41.4483 36.3108 41.3447 35.8252 41.1434C35.3396 40.9421 34.8984 40.6471 34.5269 40.2752L34.4069 40.1552C33.9356 39.6941 33.3369 39.3848 32.6881 39.2672C32.0393 39.1495 31.3702 39.2289 30.7669 39.4952C30.1754 39.7487 29.6709 40.1697 29.3155 40.7062C28.9602 41.2428 28.7695 41.8716 28.7669 42.5152V42.8552C28.7669 43.916 28.3455 44.9334 27.5954 45.6836C26.8452 46.4337 25.8278 46.8552 24.7669 46.8552C23.7061 46.8552 22.6887 46.4337 21.9385 45.6836C21.1884 44.9334 20.7669 43.916 20.7669 42.8552V42.6752C20.7514 42.0132 20.5372 41.3712 20.152 40.8326C19.7667 40.294 19.2284 39.8837 18.6069 39.6552C18.0037 39.3889 17.3345 39.3095 16.6858 39.4272C16.037 39.5448 15.4383 39.8541 14.9669 40.3152L14.8469 40.4352C14.4754 40.8071 14.0343 41.1021 13.5487 41.3034C13.0631 41.5047 12.5426 41.6083 12.0169 41.6083C11.4913 41.6083 10.9708 41.5047 10.4852 41.3034C9.99958 41.1021 9.55843 40.8071 9.18693 40.4352C8.81503 40.0637 8.51999 39.6225 8.31869 39.1369C8.1174 38.6513 8.01379 38.1308 8.01379 37.6052C8.01379 37.0795 8.1174 36.559 8.31869 36.0734C8.51999 35.5878 8.81503 35.1467 9.18693 34.7752L9.30693 34.6552C9.76801 34.1838 10.0773 33.5851 10.1949 32.9363C10.3126 32.2875 10.2332 31.6184 9.96693 31.0152C9.71341 30.4236 9.29244 29.9191 8.75586 29.5638C8.21928 29.2084 7.59051 29.0177 6.94693 29.0152H6.60693C5.54607 29.0152 4.52865 28.5937 3.77851 27.8436C3.02836 27.0934 2.60693 26.076 2.60693 25.0152C2.60693 23.9543 3.02836 22.9369 3.77851 22.1867C4.52865 21.4366 5.54607 21.0152 6.60693 21.0152H6.78693C7.44892 20.9997 8.09094 20.7854 8.62953 20.4002C9.16812 20.015 9.57836 19.4766 9.80693 18.8552C10.0732 18.2519 10.1526 17.5828 10.0349 16.934C9.9173 16.2852 9.60801 15.6865 9.14693 15.2152L9.02693 15.0952C8.65503 14.7237 8.35999 14.2825 8.15869 13.7969C7.9574 13.3113 7.85379 12.7908 7.85379 12.2652C7.85379 11.7395 7.9574 11.219 8.15869 10.7334C8.35999 10.2478 8.65503 9.80666 9.02693 9.43516C9.39843 9.06326 9.83958 8.76822 10.3252 8.56692C10.8108 8.36563 11.3313 8.26202 11.8569 8.26202C12.3826 8.26202 12.9031 8.36563 13.3887 8.56692C13.8743 8.76822 14.3154 9.06326 14.6869 9.43516L14.8069 9.55516C15.2783 10.0162 15.877 10.3255 16.5258 10.4432C17.1745 10.5608 17.8437 10.4814 18.4469 10.2152H18.6069C19.1985 9.96164 19.703 9.54067 20.0583 9.00409C20.4137 8.46751 20.6044 7.83874 20.6069 7.19516V6.85516C20.6069 5.7943 21.0284 4.77688 21.7785 4.02674C22.5287 3.27659 23.5461 2.85516 24.6069 2.85516C25.6678 2.85516 26.6852 3.27659 27.4354 4.02674C28.1855 4.77688 28.6069 5.7943 28.6069 6.85516V7.03516C28.6095 7.67874 28.8002 8.30751 29.1555 8.84409C29.5109 9.38068 30.0154 9.80164 30.6069 10.0552C31.2102 10.3214 31.8793 10.4008 32.5281 10.2832C33.1769 10.1655 33.7756 9.85624 34.2469 9.39516L34.3669 9.27516C34.7384 8.90326 35.1796 8.60822 35.6652 8.40692C36.1508 8.20563 36.6713 8.10202 37.1969 8.10202C37.7226 8.10202 38.2431 8.20563 38.7287 8.40692C39.2143 8.60822 39.6554 8.90326 40.0269 9.27516C40.3988 9.64666 40.6939 10.0878 40.8952 10.5734C41.0965 11.059 41.2001 11.5795 41.2001 12.1052C41.2001 12.6308 41.0965 13.1513 40.8952 13.6369C40.6939 14.1225 40.3988 14.5637 40.0269 14.9352L39.9069 15.0552C39.4459 15.5265 39.1366 16.1252 39.0189 16.774C38.9013 17.4228 38.9807 18.0919 39.2469 18.6952V18.8552C39.5005 19.4467 39.9214 19.9512 40.458 20.3065C40.9946 20.6619 41.6234 20.8526 42.2669 20.8552H42.6069C43.6678 20.8552 44.6852 21.2766 45.4354 22.0267C46.1855 22.7769 46.6069 23.7943 46.6069 24.8552C46.6069 25.916 46.1855 26.9334 45.4354 27.6836C44.6852 28.4337 43.6678 28.8552 42.6069 28.8552H42.4269C41.7834 28.8577 41.1546 29.0484 40.618 29.4038C40.0814 29.7591 39.6605 30.2636 39.4069 30.8552Z"
+                          stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <p class="ta-step-text">분석 결과를 바로 확인할 수 있어요</p>
+              </li>
+            </ol>
+          </div>
+
+          <div class="ta-hero-media" aria-hidden="true">
+            <img src="img1.png" alt="" />
+          </div>
+        </div>
+
+        <!-- 하단 블록 -->
+        <div class="ta-block">
+          <div class="ta-cards">
+            <!-- 왼쪽 카드: ① 이미지 올리기 + ② 분석 요청 보내기 (두 컬럼) -->
+            <section class="ta-card" data-section="upload-analyze" aria-labelledby="upload-analyze-title">
+              <div class="ta-card-head">
+                <h3 id="upload-analyze-title" class="ta-card-title">🖼️ 이미지 업로드</h3>
+              </div>
+
+              <div class="ta-list-wrap">
+              <!-- ① 이미지 올리기 -->
+              <div class="ta-col">
+                <div class="ta-row-item">
+                  <input id="files" type="file" accept="image/*" multiple />
+                </div>
+              </div>
+
+              <!-- 업로드 로딩/완료 표시 -->
+              <div class="ta-row-item">
+                <div id="uploadProgress" class="upload-status is-idle" aria-live="polite">
+                  <span class="spinner" aria-hidden="true"></span>
+                  <span class="status-text">한 번에 여러 개의 파일을 업로드 할 수 있습니다.</span>
+                </div>
+              </div>
+
+              <!-- ② 분석 요청 보내기 -->
+              <div class="ta-col">
+                <div class="ta-row-item" style="border-top:none; gap:12px;">
+                  <button id="btnAnalyze" class="btn accent" type="button" disabled>분석 시작</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+            <!-- 오른쪽 카드: 처리 기록 -->
+            <section class="ta-card" data-section="log" aria-labelledby="log-title">
+              <div class="ta-card-head">
+                <h3 id="log-title" class="ta-card-title">🗂️ 처리 기록</h3>
+              </div>
+              <div class="ta-row-item" style="width:100%;">
+                <pre id="log" class="log" style="width:100%; max-height:260px; overflow:auto;" aria-live="polite"></pre>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <!-- 3) 분석 결과 보기 (성공 시 표시) -->
+        <section id="resultSection" class="ta-card" style="display:none;" aria-labelledby="result-title" data-section="results">
+          <div class="ta-card-head">
+            <h3 id="result-title" class="ta-card-title">3) 분석 결과 보기</h3>
+            <div class="ta-collapse-24" aria-hidden="true"><div class="bar"></div></div>
+          </div>
+
+          <div class="ta-row" style="gap:12px; padding:8px 0 16px;">
+            <button id="btnResult" class="btn" type="button">결과 새로고침</button>
+            <span id="resultStatus" class="ta-text" style="margin-left:auto;"></span>
+          </div>
+
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">이미지 ID</th>
+                  <th scope="col">손상 판단</th>
+                </tr>
+              </thead>
+              <tbody id="resultBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <div class="ta-footer" aria-hidden="true"></div>
+      </div>
+    </section>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
