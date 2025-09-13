@@ -235,7 +235,7 @@ button{ cursor: pointer; }
 
 /* Cards row */
 .ta-cards{
-  align-self:stretch; min-height:400px;
+  align-self:stretch;
   display:inline-flex; gap:24px; align-items:stretch; width:100%;
   flex-wrap: wrap;
 }
@@ -312,13 +312,23 @@ button{ cursor: pointer; }
 }
 
 #files{
-  display: block;
-  width: 100%;
-  max-width: 720px;          /* 버튼과 동일 폭 */
-  margin: 0 auto;            /* 중앙 배치 */
-  min-height: 56px;          /* 버튼 높이와 유사 */
-  padding: 16px 18px;        /* 손가락 터치 여유 */
-  border-radius: 14px;       /* 버튼과 톤 매칭 */
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 100% !important;
+  max-width: 720px;
+  margin: 20px auto;
+  min-height: 80px !important;
+  padding: 20px !important;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.1) !important;
+  border: 3px dashed #A7EE43 !important;
+  color: #A7EE43 !important;
+  font-size: 18px !important;
+  font-weight: bold !important;
+  cursor: pointer !important;
+  position: relative !important;
+  z-index: 999 !important;
 }
 
 /* 넓은 화면에서는 조금 더 길게 */
@@ -460,7 +470,19 @@ input[type="checkbox"], input[type="radio"]{
 .table tbody tr:hover{ background: rgba(255,255,255,0.03); }
 
 /* 로그 라인 하이라이트 */
-.log{ white-space: normal; }               /* 줄바꿈을 우리가 컨트롤 */
+.log{ 
+  white-space: normal; 
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  background: rgba(0,0,0,.35);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  line-height: 1.4;
+  min-height: 300px;
+  max-height: 600px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
 .log .ln{
   display:block;
   margin: 4px 0;
@@ -513,6 +535,10 @@ input[type="checkbox"], input[type="radio"]{
   padding: 12px;
   line-height: 1.4;
   white-space: pre-wrap;
+  min-height: 300px;
+  max-height: 600px;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* ---------- Footer Spacer ---------- */

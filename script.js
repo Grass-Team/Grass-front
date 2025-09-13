@@ -1,7 +1,7 @@
 // ================================
 // 환경설정
 // ================================
-const API_BASE = "http://localhost:8080";
+const API_BASE = "http://13.125.81.117:8080"; // 백엔드 CORS 설정으로 직접 연결
 
 // ================================
 // 유틸
@@ -53,7 +53,7 @@ function getUserId() {
 // ================================
 // 상태
 // ================================
-let uploadedIds = new Set(); // 업로드되어 서버가 돌려준 이미지ID (전체 = 분석 대상)
+let selectedFiles = []; // 선택된 파일들 (로컬 상태)
 
 // ================================
 // DOM
@@ -70,6 +70,14 @@ const btnPoll        = $("#btnPoll");
 const elUploadProgress = $("#uploadProgress");
 const elUploadText     = elUploadProgress?.querySelector(".status-text");
 
+// 디버깅: DOM 요소들이 제대로 선택되었는지 확인
+console.log("DOM 요소 확인:", {
+  elFiles: !!elFiles,
+  btnAnalyze: !!btnAnalyze,
+  elUploadProgress: !!elUploadProgress,
+  elUploadText: !!elUploadText
+});
+
 // ================================
 // 결과 영역 표시/숨김
 // ================================
@@ -85,95 +93,91 @@ function showResultSection(show) {
 }
 
 // ================================
-// 파일 선택 → 자동 업로드
+// 파일 선택 → 로컬 상태 관리
 // ================================
-elFiles?.addEventListener("change", async () => {
+elFiles?.addEventListener("change", () => {
   const files = elFiles.files || [];
-  btnAnalyze && (btnAnalyze.disabled = true);
   
   if (!files.length) {
+    selectedFiles = [];
+    btnAnalyze && (btnAnalyze.disabled = true);
     if (elUploadProgress){
       elUploadProgress.classList.remove("is-loading","is-done","is-error");
       elUploadProgress.classList.add("is-idle");
     }
-    elUploadText && (elUploadText.textContent = "파일을 선택하면 자동으로 업로드됩니다.");
+    elUploadText && (elUploadText.textContent = "파일을 선택해주세요.");
     return;
   }
 
-  // 🔄 로딩 상태로 전환
+  // 선택된 파일들을 로컬 상태에 저장
+  selectedFiles = Array.from(files);
+  
+  // ✅ 완료 표시 + 분석 버튼 활성화
   if (elUploadProgress){
-    elUploadProgress.classList.remove("is-idle","is-done","is-error");
-    elUploadProgress.classList.add("is-loading");
+    elUploadProgress.classList.remove("is-loading","is-error","is-idle");
+    elUploadProgress.classList.add("is-done");
   }
-  elUploadText && (elUploadText.textContent = `업로드 중… (${files.length}개)`);
+  elUploadText && (elUploadText.textContent = `파일 선택 완료: ${selectedFiles.length}개 (분석 준비됨)`);
 
-  const userId = getUserId();
-  const fd = new FormData();
-  for (const f of files) fd.append("files", f); // 백엔드 명세: files (List<MultipartFile>)
-  fd.append("userId", userId);                  // 구현 호환용 (form-field)
-  const url = `${API_BASE}/images/upload?userId=${encodeURIComponent(userId)}`;
-
-  try {
-    const res  = await fetch(url, { method: "POST", body: fd });
-    const data = await safeJson(res);
-
-    if (!res.ok || data?.success === false) {
-      throw new Error((data && (data.apiError || data.message)) || String(res.status));
-    }
-
-    const ids = extractIds(data);
-    if (!ids.length) throw new Error("서버가 imageId를 반환하지 않았습니다.");
-
-    uploadedIds = new Set(ids);
-
-    // ✅ 완료 표시 + 분석 버튼 활성화
-    if (elUploadProgress){
-      elUploadProgress.classList.remove("is-loading","is-error","is-idle");
-      elUploadProgress.classList.add("is-done");
-    }
-    elUploadText && (elUploadText.textContent = `업로드 완료: ${ids.length}개 (분석 준비됨)`);
-
-    btnAnalyze && (btnAnalyze.disabled = false);
-    log("✅ 이미지 업로드 완료: " + ids.join(", "));
-  } catch (e) {
-    alert("업로드에 실패했어요. 잠시 후 다시 시도해 주세요 🙏\n\n사유: " + e.message);
-    log("❌ 업로드 실패: " + e.message);
-    if (elUploadProgress){
-      elUploadProgress.classList.remove("is-loading","is-done","is-idle");
-      elUploadProgress.classList.add("is-error");
-    }
-    elUploadStatus && (elUploadStatus.textContent = "업로드 실패. 다시 시도해 주세요.");
-    btnAnalyze && (btnAnalyze.disabled = true);
-  }
+  btnAnalyze && (btnAnalyze.disabled = false);
+  console.log("파일 선택 완료, 총 선택된 파일 수:", selectedFiles.length);
+  
+  // 각 파일별로 개별 로그 기록
+  selectedFiles.forEach((file) => {
+    log(`📁 파일 선택 완료: ${file.name}`);
+  });
 });
 
 // ================================
-// 분석 요청 (업로드된 모든 ID 사용)
+// 분석 요청 (선택된 파일들을 업로드하고 분석 요청)
 // ================================
 btnAnalyze?.addEventListener("click", async () => {
-  const ids = [...uploadedIds];
-  if (ids.length === 0) return alert("먼저 이미지를 업로드해 주세요 ✅");
-
-  const payload = {
-    userId: getUserId(),
-    imageIdStrings: ids, // 백엔드 명세: imageIdStrings
-  };
+  if (selectedFiles.length === 0) return alert("먼저 이미지를 선택해 주세요 ✅");
 
   try {
     btnAnalyze.disabled = true;
-    const res  = await fetch(`${API_BASE}/images/analyze`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = await safeJson(res);
+    btnAnalyze.textContent = "업로드 및 분석 중...";
+    
+    // 1단계: 파일 업로드
+    log("📤 파일 업로드 시작...");
+    const userId = getUserId();
+    const fd = new FormData();
+    for (const f of selectedFiles) fd.append("files", f);
+    const uploadUrl = `${API_BASE}/images/upload?userId=${encodeURIComponent(userId)}`;
 
-    if (!res.ok || data?.success === false) {
-      throw new Error((data && (data.apiError || data.message)) || String(res.status));
+    const uploadRes = await fetch(uploadUrl, { method: "POST", body: fd });
+    const uploadData = await safeJson(uploadRes);
+
+    if (!uploadRes.ok) {
+      throw new Error(uploadData?.message || `업로드 실패: ${uploadRes.status}`);
     }
 
-    log("🧪 분석 요청 전송: " + payload.imageIdStrings.join(", "));
-    elUploadStatus && (elUploadStatus.textContent = "분석 중… 🔍");
+    const uploadedIds = uploadData?.response || uploadData?.data || uploadData;
+    if (!Array.isArray(uploadedIds) || !uploadedIds.length) {
+      throw new Error("서버가 imageId를 반환하지 않았습니다.");
+    }
+
+    log(`✅ 파일 업로드 완료: ${uploadedIds.length}개`);
+
+    // 2단계: 분석 요청
+    log("🧪 분석 요청 전송...");
+    const analyzePayload = {
+      userId: userId,
+      s3Urls: uploadedIds, // 백엔드 명세: s3Urls
+    };
+
+    const analyzeRes = await fetch(`${API_BASE}/images/analyze`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(analyzePayload),
+    });
+    const analyzeData = await safeJson(analyzeRes);
+
+    if (!analyzeRes.ok) {
+      throw new Error(analyzeData?.message || `분석 요청 실패: ${analyzeRes.status}`);
+    }
+
+    log("✅ 분석 요청 완료");
     alert("분석을 시작했습니다! 🔍 잠시 후 결과를 보여드릴게요.");
 
     // 성공 시 결과 섹션 표시
@@ -183,10 +187,11 @@ btnAnalyze?.addEventListener("click", async () => {
     await fetchResults();
     await quickPoll();
   } catch (e) {
-    alert("분석 요청에 실패했어요. 잠시 후 다시 시도해 주세요 🙏\n\n사유: " + e.message);
-    log("❌ 분석 요청 실패: " + e.message);
+    alert("처리에 실패했어요. 잠시 후 다시 시도해 주세요 🙏\n\n사유: " + e.message);
+    log("❌ 처리 실패: " + e.message);
   } finally {
     btnAnalyze.disabled = false;
+    btnAnalyze.textContent = "분석 시작";
   }
 });
 
@@ -205,11 +210,12 @@ async function fetchResults() {
     const res  = await fetch(`${API_BASE}/images/result?userId=${encodeURIComponent(userId)}`);
     const data = await safeJson(res);
 
-    if (!res.ok || data?.success === false) {
-      throw new Error((data && (data.apiError || data.message)) || String(res.status));
+    if (!res.ok) {
+      throw new Error(data?.message || String(res.status));
     }
 
-    const items = extractResults(data);
+    // ApiResult.ok(List<ViewImageResult>) 형태의 응답에서 실제 데이터 추출
+    const items = data?.response || data?.data || data || [];
     renderResults(items);
 
     const count = items.length;
@@ -243,8 +249,10 @@ function renderResults(arr) {
   elResultBody.innerHTML = "";
   arr.forEach((r) => {
     const tr = document.createElement("tr");
-    const imageId = r.imageId ?? r.id ?? r.image_id ?? "-";
-    const damageRaw = r.analysisResult ?? r.damage ?? r.status ?? r.result ?? "";
+    // ViewImageResult에서 가능한 필드명들 고려
+    const imageId = r.imageId ?? r.id ?? r.image_id ?? r.s3Url ?? r.url ?? "-";
+    const damageRaw = r.analysisResult ?? r.damage ?? r.status ?? r.result ?? 
+                     r.condition ?? r.grassCondition ?? r.damageLevel ?? "";
     const status = klassByText(damageRaw);
     const statusHtml = status.cls
       ? `<span class="badge ${status.cls}">${status.emoji} ${status.label}</span>`
@@ -278,24 +286,8 @@ async function safeJson(res) {
   catch { return {}; }
 }
 
-function extractIds(data) {
-  if (Array.isArray(data?.response) && typeof data.response[0] === "string") return data.response;
-  if (Array.isArray(data?.response) && data.response[0] && typeof data.response[0].id === "string") {
-    return data.response.map(x => x.id);
-  }
-  if (Array.isArray(data?.imageIds)) return data.imageIds;
-  if (Array.isArray(data) && typeof data[0] === "string") return data;
-  if (Array.isArray(data) && data[0] && typeof data[0].id === "string") return data.map(x => x.id);
-  if (typeof data?.imageId === "string") return [data.imageId];
-  return [];
-}
-
-function extractResults(data) {
-  if (Array.isArray(data?.response)) return data.response;
-  if (Array.isArray(data?.items)) return data.items;
-  if (Array.isArray(data)) return data;
-  return [];
-}
+// extractIds, extractResults 함수들은 더 이상 사용하지 않음
+// ApiResult.ok(data) 형태의 응답을 직접 처리
 
 function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
 
