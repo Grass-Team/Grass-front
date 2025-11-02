@@ -3,15 +3,19 @@
 // ================================
 const HOST = "http://13.124.222.50:8080";
 const UPLOAD_PATH = "/images/upload";
-const ANALYZE_PATH= "/images/analyze";
+const ANALYZE_PATH = "/images/analyze";
 const RESULT_PATH = "/images/result";
-const FORM_FIELD  = "files"; // @RequestParam("files")
+const FORM_FIELD = "files"; // @RequestParam("files")
 
 // Mock 스위치: 기본값은 전부 false (실서버 사용)
 // window.MOCK 이 외부에서 미리 정의돼 있으면 그대로 사용
 window.MOCK = window.MOCK ?? { upload: false, analyze: false, result: false };
 const MOCK = window.MOCK;
-const MOCK_LATENCY = window.MOCK_LATENCY ?? { upload: 800, analyze: 900, resultPoll: 1200 };
+const MOCK_LATENCY = window.MOCK_LATENCY ?? {
+  upload: 800,
+  analyze: 900,
+  resultPoll: 1200,
+};
 
 // 업로드 성공 시 서버가 돌려준 imageId들을 보관 + 로컬 미리보기용 파일
 let uploadedImageIds = [];
@@ -24,7 +28,9 @@ const USER_ID_KEY = "ti_userId";
 function getUserId() {
   let id = localStorage.getItem(USER_ID_KEY);
   if (!id) {
-    id = crypto.randomUUID?.() || `anon-${Date.now()}-${Math.floor(Math.random()*1e6)}`;
+    id =
+      crypto.randomUUID?.() ||
+      `anon-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
     localStorage.setItem(USER_ID_KEY, id);
   }
   return id;
@@ -33,9 +39,13 @@ const $ = (s) => document.querySelector(s);
 
 async function jsonOrThrow(res) {
   let text = "";
-  try { text = await res.text(); } catch {}
+  try {
+    text = await res.text();
+  } catch {}
   let data = {};
-  try { data = text ? JSON.parse(text) : {}; } catch {}
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {}
   if (!res.ok || data?.success === false) {
     const msg = data?.apiError || data?.message || text || `HTTP ${res.status}`;
     throw new Error(msg);
@@ -77,17 +87,33 @@ function extractParsedLambdaResult(data) {
 
 // 상태 문자열 표준화(백 응답 다양성 대비)
 const STATUS_MAP = {
-  good: 'good', 양호: 'good', GOOD: 'good',
-  warn: 'warn', 주의: 'warn', WARNING: 'warn', caution: 'warn',
-  bad:  'bad',  불량: 'bad',  BAD: 'bad'
+  good: "good",
+  양호: "good",
+  GOOD: "good",
+  warn: "warn",
+  주의: "warn",
+  WARNING: "warn",
+  caution: "warn",
+  bad: "bad",
+  불량: "bad",
+  BAD: "bad",
 };
 
 // 원인 팔레트
-const CAUSE_PALETTE = ['#63DB1F', '#FFD15C', '#FF6B6B', '#7AC6FF', '#B48CFF', '#FF9EC1'];
+const CAUSE_PALETTE = [
+  "#63DB1F",
+  "#FFD15C",
+  "#FF6B6B",
+  "#7AC6FF",
+  "#B48CFF",
+  "#FF9EC1",
+];
 
 function aggregateResults(items = []) {
   const perImage = [];
-  let good = 0, bad = 0, warn = 0;
+  let good = 0,
+    bad = 0,
+    warn = 0;
 
   // 원인 누산 테이블 (label -> 누적 값)
   const causeSum = new Map();
@@ -102,31 +128,30 @@ function aggregateResults(items = []) {
   for (const raw of items) {
     // 1) 상태 뽑기
     const statusRaw =
-      pick(raw, ['analysisResult', 'result', 'status', 'overallStatus']) ||
-      pick(raw?.result, ['status', 'analysisResult']) ||
-      pick(raw?.summary, ['status']);
-    const norm = STATUS_MAP[statusRaw] || STATUS_MAP[String(statusRaw || '').toLowerCase()] || 'bad';
+      pick(raw, ["analysisResult", "result", "status", "overallStatus"]) ||
+      pick(raw?.result, ["status", "analysisResult"]) ||
+      pick(raw?.summary, ["status"]);
+    const norm =
+      STATUS_MAP[statusRaw] ||
+      STATUS_MAP[String(statusRaw || "").toLowerCase()] ||
+      "bad";
 
-    if (norm === 'good') good += 1;
-    else if (norm === 'warn') warn += 1;
+    if (norm === "good") good += 1;
+    else if (norm === "warn") warn += 1;
     else bad += 1;
 
     // 2) 원인 배열 후보군
     const causeArr =
-      pick(raw, ['causes', 'causeList', 'reasons', 'damageCauses']) ||
-      pick(raw?.result, ['causes', 'causeList']) ||
-      pick(raw?.summary, ['causes']) ||
+      pick(raw, ["causes", "causeList", "reasons", "damageCauses"]) ||
+      pick(raw?.result, ["causes", "causeList"]) ||
+      pick(raw?.summary, ["causes"]) ||
       [];
 
     // 가능한 키들로 라벨/값 읽기
     const parsedCauses = [];
-    for (const c of (Array.isArray(causeArr) ? causeArr : [])) {
-      const label =
-        pick(c, ['label', 'type', 'name', 'causeLabel'], '원인');
-      const v =
-        Number(
-          pick(c, ['percent', 'pct', 'value', 'ratio'], 0)
-        ) || 0;
+    for (const c of Array.isArray(causeArr) ? causeArr : []) {
+      const label = pick(c, ["label", "type", "name", "causeLabel"], "원인");
+      const v = Number(pick(c, ["percent", "pct", "value", "ratio"], 0)) || 0;
 
       if (!label) continue;
       parsedCauses.push({ label: String(label), pct: Math.max(0, v) });
@@ -134,41 +159,45 @@ function aggregateResults(items = []) {
     }
 
     perImage.push({
-      imageId: pick(raw, ['imageId', 'id'], ''),
+      imageId: pick(raw, ["imageId", "id"], ""),
       status: norm,
-      causes: parsedCauses
+      causes: parsedCauses,
     });
   }
 
   // 전체 비율 계산
   const total = good + bad + warn || 1;
   const goodPct = Math.round((good / total) * 100);
-  const badPct  = Math.round((bad  / total) * 100);
+  const badPct = Math.round((bad / total) * 100);
   // 경고는 도넛 모델상 ‘불량’과 분리할지 여부 선택: 지금은 불량에 포함 X
   // 필요하면: const badLikePct = Math.round(((bad + warn) / total) * 100);
 
   // 원인 정규화(퍼센트 합 100 되게)
   const causeEntries = [...causeSum.entries()];
-  const causeTotal = causeEntries.reduce((a,[,v]) => a + v, 0) || 0;
+  const causeTotal = causeEntries.reduce((a, [, v]) => a + v, 0) || 0;
 
   let remain = 100;
   const causes = causeEntries
-    .sort((a,b) => b[1] - a[1])
+    .sort((a, b) => b[1] - a[1])
     .map(([label, v], idx, arr) => {
-      const basePct = causeTotal ? Math.round((v / causeTotal) * 100) : (idx === 0 ? 100 : 0);
-      const pct = (idx === arr.length - 1) ? remain : Math.min(remain, basePct);
+      const basePct = causeTotal
+        ? Math.round((v / causeTotal) * 100)
+        : idx === 0
+        ? 100
+        : 0;
+      const pct = idx === arr.length - 1 ? remain : Math.min(remain, basePct);
       remain -= pct;
       return {
         label,
-        value: pct,          // swapToResults에서 value를 퍼센트로 사용
-        valueColor: CAUSE_PALETTE[idx % CAUSE_PALETTE.length]
+        value: pct, // swapToResults에서 value를 퍼센트로 사용
+        valueColor: CAUSE_PALETTE[idx % CAUSE_PALETTE.length],
       };
     });
 
   return {
     overall: { goodPct, badPct },
     causes,
-    perImage
+    perImage,
   };
 }
 
@@ -177,8 +206,8 @@ function renderAggregated(items) {
   const agg = aggregateResults(items);
   swapToResults({
     good: agg.overall.goodPct,
-    bad:  agg.overall.badPct,
-    segments: agg.causes
+    bad: agg.overall.badPct,
+    segments: agg.causes,
   });
   return agg; // 필요 시 per-image 상태에 활용
 }
@@ -203,9 +232,9 @@ function ensureStatusEl() {
 
 function renderInitialUI() {
   const kicker = document.querySelector(".ta-group-1 .ta-kicker");
-  const sub    = document.querySelector(".ta-group-1 .ta-sub");
+  const sub = document.querySelector(".ta-group-1 .ta-sub");
   if (kicker) kicker.textContent = "분석할 잔디 이미지를 업로드 해주세요❕";
-  if (sub)    sub.textContent    = "최대 10장 업로드 가능";
+  if (sub) sub.textContent = "최대 10장 업로드 가능";
 
   const group2 = document.querySelector(".ta-group-2");
   if (group2) group2.hidden = false;
@@ -214,14 +243,14 @@ function renderInitialUI() {
   if (btnReset) btnReset.remove();
 
   const btnUpload = document.getElementById("btnUpload");
-  const input     = document.getElementById("fileInput");
+  const input = document.getElementById("fileInput");
   if (btnUpload) {
     btnUpload.textContent = "이미지 업로드";
     btnUpload.classList.remove("btn-analyze");
     btnUpload.disabled = false;
 
     if (onAnalyzeClick) btnUpload.removeEventListener("click", onAnalyzeClick);
-    if (onUploadClick)  btnUpload.removeEventListener("click", onUploadClick);
+    if (onUploadClick) btnUpload.removeEventListener("click", onUploadClick);
 
     onUploadClick = () => input && input.click();
     btnUpload.addEventListener("click", onUploadClick);
@@ -239,17 +268,21 @@ function renderInitialUI() {
 }
 
 function renderAfterUploadSuccess(files) {
-  const arr   = Array.isArray(files) ? files : [];
+  const arr = Array.isArray(files) ? files : [];
   const count = arr.length;
-  if (count === 0) { renderInitialUI(); return; }
+  if (count === 0) {
+    renderInitialUI();
+    return;
+  }
 
   const firstName = arr[0]?.name || `${count}개`;
-  const labelText = (count === 1) ? `${firstName}` : `${firstName} 외 ${count - 1}장`;
+  const labelText =
+    count === 1 ? `${firstName}` : `${firstName} 외 ${count - 1}장`;
 
-  const kicker   = document.querySelector(".ta-group-1 .ta-kicker");
-  const sub      = document.querySelector(".ta-group-1 .ta-sub");
-  const group2   = document.querySelector(".ta-group-2");
-  const btnUpload= document.getElementById("btnUpload");
+  const kicker = document.querySelector(".ta-group-1 .ta-kicker");
+  const sub = document.querySelector(".ta-group-1 .ta-sub");
+  const group2 = document.querySelector(".ta-group-2");
+  const btnUpload = document.getElementById("btnUpload");
 
   if (kicker) kicker.textContent = "이미지 업로드 완료 ✅";
   if (sub) {
@@ -273,7 +306,7 @@ function renderAfterUploadSuccess(files) {
     btnUpload.classList.add("btn-analyze");
     btnUpload.disabled = false;
 
-    if (onUploadClick)  btnUpload.removeEventListener("click", onUploadClick);
+    if (onUploadClick) btnUpload.removeEventListener("click", onUploadClick);
     if (onAnalyzeClick) btnUpload.removeEventListener("click", onAnalyzeClick);
 
     onAnalyzeClick = handleAnalyzeClick;
@@ -349,59 +382,79 @@ async function handleAnalyzeClick() {
  */
 function summarizeLambdaResult(lambdaResultStr, opts = {}) {
   const {
-    useTop1PerImage = false,  // 모든 원인을 수집
-    confThresh = 0.3,          // confidence 임계값
-    labelMap = null,           // 백엔드 라벨 매핑 필요시
+    useTop1PerImage = false, // 모든 원인을 수집
+    confThresh = 0.3, // confidence 임계값
+    labelMap = null, // 백엔드 라벨 매핑 필요시
   } = opts;
 
   // 1️⃣ 입력 파싱 (문자열, 중첩 JSON 모두 허용)
   let parsed = lambdaResultStr;
   try {
-    if (typeof parsed === 'string') {
+    if (typeof parsed === "string") {
       parsed = JSON.parse(parsed);
-      if (typeof parsed === 'string') parsed = JSON.parse(parsed); // 이중 인코딩 방어
+      if (typeof parsed === "string") parsed = JSON.parse(parsed); // 이중 인코딩 방어
     }
   } catch (e) {
-    console.warn('⚠️ lambdaResult JSON 파싱 실패:', e, lambdaResultStr);
-    return { good: 0, bad: 0, goodPct: 0, badPct: 0, total: 0, segments: [], perImage: [] };
+    console.warn("⚠️ lambdaResult JSON 파싱 실패:", e, lambdaResultStr);
+    return {
+      good: 0,
+      bad: 0,
+      goodPct: 0,
+      badPct: 0,
+      total: 0,
+      segments: [],
+      perImage: [],
+    };
   }
 
   // 2️⃣ 이미지 리스트 추출
-  const images = parsed && typeof parsed === 'object' ? Object.values(parsed) : [];
+  const images =
+    parsed && typeof parsed === "object" ? Object.values(parsed) : [];
   if (!images.length) {
-    console.warn('⚠️ lambdaResult 내 이미지 데이터 없음:', parsed);
-    return { good: 0, bad: 0, goodPct: 0, badPct: 0, total: 0, segments: [], perImage: [] };
+    console.warn("⚠️ lambdaResult 내 이미지 데이터 없음:", parsed);
+    return {
+      good: 0,
+      bad: 0,
+      goodPct: 0,
+      badPct: 0,
+      total: 0,
+      segments: [],
+      perImage: [],
+    };
   }
 
-  let good = 0, bad = 0;
+  let good = 0,
+    bad = 0;
   const perImage = [];
   const causeCounts = new Map(); // label → count
 
   const mapLabel = (raw) => {
-    const s = String(raw ?? '원인 미상');
-    return (labelMap && labelMap[s]) ? labelMap[s] : s;
+    const s = String(raw ?? "원인 미상");
+    return labelMap && labelMap[s] ? labelMap[s] : s;
   };
 
   // 3️⃣ 각 이미지 순회
   for (const item of images) {
-    const input  = item?.input_image  || '';
-    const output = item?.result_image || '';
-    const dets   = Array.isArray(item?.detections) ? item.detections : [];
+    const input = item?.input_image || "";
+    const output = item?.result_image || "";
+    const dets = Array.isArray(item?.detections) ? item.detections : [];
 
     // confidence 필터
-    const valid = dets.filter(d => (Number(d?.confidence) || 0) >= confThresh);
+    const valid = dets.filter(
+      (d) => (Number(d?.confidence) || 0) >= confThresh
+    );
 
-    console.log('[IMG]', {
+    console.log("[IMG]", {
       input: item?.input_image,
       detCount: Array.isArray(item?.detections) ? item.detections.length : 0,
-      labels: (item?.detections || []).map(d => d?.class_name),
-      confs:  (item?.detections || []).map(d => d?.confidence),
+      labels: (item?.detections || []).map((d) => d?.class_name),
+      confs: (item?.detections || []).map((d) => d?.confidence),
     });
 
     // 🔹 탐지 없음 → 양호
     if (valid.length === 0) {
       good++;
-      perImage.push({ input, output, status: '양호', causes: [] });
+      perImage.push({ input, output, status: "양호", causes: [] });
       continue;
     }
 
@@ -410,15 +463,17 @@ function summarizeLambdaResult(lambdaResultStr, opts = {}) {
 
     if (useTop1PerImage) {
       // 대표 1개만
-      const top = valid.reduce((a, b) => (a.confidence >= b.confidence ? a : b));
-      const l   = mapLabel(top?.class_name);
+      const top = valid.reduce((a, b) =>
+        a.confidence >= b.confidence ? a : b
+      );
+      const l = mapLabel(top?.class_name);
       causeCounts.set(l, (causeCounts.get(l) || 0) + 1);
-      perImage.push({ input, output, status: '불량', causes: [l] });
+      perImage.push({ input, output, status: "불량", causes: [l] });
     } else {
       // 모든 원인 누적
-      const labels = valid.map(d => mapLabel(d?.class_name));
-      labels.forEach(l => causeCounts.set(l, (causeCounts.get(l) || 0) + 1));
-      perImage.push({ input, output, status: '불량', causes: labels });
+      const labels = valid.map((d) => mapLabel(d?.class_name));
+      labels.forEach((l) => causeCounts.set(l, (causeCounts.get(l) || 0) + 1));
+      perImage.push({ input, output, status: "불량", causes: labels });
     }
   }
 
@@ -428,13 +483,19 @@ function summarizeLambdaResult(lambdaResultStr, opts = {}) {
     .sort((a, b) => b.value - a.value);
 
   // 5️⃣ 비율 계산
-  const total   = good + bad;
+  const total = good + bad;
   const goodPct = total ? Math.round((good / total) * 100) : 0;
-  const badPct  = total ? (100 - goodPct) : 0;
+  const badPct = total ? 100 - goodPct : 0;
 
   // 6️⃣ 콘솔 디버깅용 출력
-  console.log('📊 [summarizeLambdaResult] 요약 결과:', {
-    total, good, bad, goodPct, badPct, segments, perImageCount: perImage.length
+  console.log("📊 [summarizeLambdaResult] 요약 결과:", {
+    total,
+    good,
+    bad,
+    goodPct,
+    badPct,
+    segments,
+    perImageCount: perImage.length,
   });
 
   return { good, bad, goodPct, badPct, total, segments, perImage };
@@ -442,17 +503,33 @@ function summarizeLambdaResult(lambdaResultStr, opts = {}) {
 
 // 실제 분석 호출(백 연결용)
 async function callAnalyze(userId, ids) {
-  const query = ids.map(id => `imageIdStrings=${encodeURIComponent(id)}`).join("&");
-  const url = `${HOST}/images/analyze?userId=${encodeURIComponent(userId)}&${query}`;
-  console.log("[ANALYZE]", url);
-  console.log("[🔵 callAnalyze] 요청 URL:", url);
-  console.log("[🔵 callAnalyze] 요청 IDs:", ids);
+  // ⛔️ 0개만 반환되던 JSON 본문 방식
+  // const url = `${HOST}${ANALYZE_PATH}?userId=${encodeURIComponent(userId)}`;
+  // const body = {
+  //   userId: userId,
+  //   imageIdStrings: ids
+  // };
 
+  // ✅ 7, 8개라도 반환했던 원래의 쿼리 파라미터 방식으로 복원
+  const query = ids
+    .map((id) => `imageIdStrings=${encodeURIComponent(id)}`)
+    .join("&");
+  const url = `${HOST}${ANALYZE_PATH}?userId=${encodeURIComponent(
+    userId
+  )}&${query}`;
+
+  console.log("[ANALYZE] 요청 URL (쿼리 파라미터 방식):", url);
+  console.log("[ANALYZE] 요청 IDs:", ids);
   console.log("[✅ upload 완료] imageIds:", uploadedImageIds);
 
   const res = await fetch(url, {
     method: "POST",
-    cache: "no-store"
+    // ⛔️ JSON 본문 제거
+    // headers: {
+    //   "Content-Type": "application/json",
+    // },
+    // body: JSON.stringify(body),
+    cache: "no-store",
   });
 
   const data = await jsonOrThrow(res);
@@ -482,7 +559,7 @@ function showSkeleton(show) {
 // 메인: 버튼 → 파일 선택 → 업로드
 // ================================
 document.addEventListener("DOMContentLoaded", () => {
-  const btn   = document.getElementById("btnUpload");
+  const btn = document.getElementById("btnUpload");
   const input = document.getElementById("fileInput");
   if (!btn || !input) return;
 
@@ -501,12 +578,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const MAX_SIZE_MB = 5;
-    const tooLarge = files.find(f => f.size > MAX_SIZE_MB * 1024 * 1024);
+    const tooLarge = files.find((f) => f.size > MAX_SIZE_MB * 1024 * 1024);
     if (tooLarge) {
       const mb = (tooLarge.size / (1024 * 1024)).toFixed(1);
       statusEl.textContent = `⚠️ '${tooLarge.name}' 파일이 너무 큽니다 (${mb}MB). ${MAX_SIZE_MB}MB 이하로 줄여주세요.`;
       input.value = ""; // 입력 초기화
-      alert(`'${tooLarge.name}' 파일이 너무 커서 업로드할 수 없습니다.\n(현재: ${mb}MB / 제한: ${MAX_SIZE_MB}MB)`);
+      alert(
+        `'${tooLarge.name}' 파일이 너무 커서 업로드할 수 없습니다.\n(현재: ${mb}MB / 제한: ${MAX_SIZE_MB}MB)`
+      );
       return;
     }
 
@@ -520,7 +599,7 @@ document.addEventListener("DOMContentLoaded", () => {
         uploadedImageIds = mockImageIdsFromFiles(files);
       } else {
         const fd = new FormData();
-        files.forEach(f => fd.append(FORM_FIELD, f));
+        files.forEach((f) => fd.append(FORM_FIELD, f));
         const userId = getUserId();
         fd.append("userId", userId);
 
@@ -530,10 +609,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const res = await fetch(url, { method: "POST", body: fd });
         const data = await jsonOrThrow(res);
 
-        uploadedImageIds = Array.isArray(data?.response) ? data.response
-                         : Array.isArray(data?.items)    ? data.items
-                         : Array.isArray(data)           ? data
-                         : [];
+        uploadedImageIds = Array.isArray(data?.response)
+          ? data.response
+          : Array.isArray(data?.items)
+          ? data.items
+          : Array.isArray(data)
+          ? data
+          : [];
       }
 
       statusEl.textContent = "업로드가 완료되었습니다. ✅";
@@ -551,33 +633,39 @@ document.addEventListener("DOMContentLoaded", () => {
 // 업로드 카드 내용을 지우고 '분석 결과' 화면으로 교체
 function swapToResults(ratios) {
   // 결과 카드 확보
-  const card = document.getElementById('resultsCard')
-             || document.querySelector('.ta-card[data-section="upload-analyze"]');
+  const card =
+    document.getElementById("resultsCard") ||
+    document.querySelector('.ta-card[data-section="upload-analyze"]');
   if (!card) return;
-  card.id = 'resultsCard';
+  card.id = "resultsCard";
 
   // ✅ 전역 요약/사진별 데이터 확보
   const summary = window._lastSummary || {};
-  const perImageArr =
-    Array.isArray(ratios?.perImage) ? ratios.perImage :
-    Array.isArray(summary?.perImage) ? summary.perImage :
-    Array.isArray(window._lastPerImageArr) ? window._lastPerImageArr : [];
+  const perImageArr = Array.isArray(ratios?.perImage)
+    ? ratios.perImage
+    : Array.isArray(summary?.perImage)
+    ? summary.perImage
+    : Array.isArray(window._lastPerImageArr)
+    ? window._lastPerImageArr
+    : [];
 
-  console.log('[swapToResults] perImageArr:', perImageArr);
+  console.log("[swapToResults] perImageArr:", perImageArr);
 
   // 전체 비율 계산
   const g = Math.max(0, Number(ratios?.good ?? summary?.goodPct ?? 0));
   const b = Math.max(0, Number(ratios?.bad ?? summary?.badPct ?? 0));
   const sum = g + b || 1;
   const goodPct = Math.round((g / sum) * 100);
-  const badPct  = 100 - goodPct;
+  const badPct = 100 - goodPct;
 
   // 색상
-  const GOOD = ratios?.goodValueColor || '#63DB1F';
-  const BAD  = ratios?.badValueColor  || '#FF6B6B';
+  const GOOD = ratios?.goodValueColor || "#63DB1F";
+  const BAD = ratios?.badValueColor || "#FF6B6B";
 
   // 손상 원인 세그먼트
-  const segments = ratios?.segments?.length ? ratios.segments : (summary?.segments || []);
+  const segments = ratios?.segments?.length
+    ? ratios.segments
+    : summary?.segments || [];
   const norm = normalizeSegments(segments);
   const bg = buildConicGradient(norm);
   const ranked = [...norm].sort((a, b) => b.pct - a.pct);
@@ -609,24 +697,31 @@ function swapToResults(ratios) {
         <div class="donut-center"><div class="donut-title">손상 원인</div></div>
       </div>
       <div class="donut-legend legend-col">
-        ${ranked.map((s,i)=>`
-          <div class="legend-row" style="--val-color:${s.valueColor || s.color}">
-            <span class="legend-rank">#${i+1}</span>
+        ${ranked
+          .map(
+            (s, i) => `
+          <div class="legend-row" style="--val-color:${
+            s.valueColor || s.color
+          }">
+            <span class="legend-rank">#${i + 1}</span>
             <span class="legend-label">${s.label}</span>
             <span class="legend-value">${s.pct}%</span>
-          </div>`).join('')}
+          </div>`
+          )
+          .join("")}
       </div>
     </div>`;
 
   // 요약 문장
-  const topCauseLabel = ranked[0]?.label || '손상 원인 없음';
-  const summaryHTML = (goodPct > badPct)
-    ? `전반적으로 잔디 상태가 <span class="hl" style="color:${GOOD}">양호</span>합니다.`
-    : `전반적으로 잔디 상태가 <span class="hl" style="color:${BAD}">불량</span>하며 <span class="hl">${topCauseLabel}</span>가 가장 심각합니다.`;
+  const topCauseLabel = ranked[0]?.label || "손상 원인 없음";
+  const summaryHTML =
+    goodPct > badPct
+      ? `전반적으로 잔디 상태가 <span class="hl" style="color:${GOOD}">양호</span>합니다.`
+      : `전반적으로 잔디 상태가 <span class="hl" style="color:${BAD}">불량</span>하며 <span class="hl">${topCauseLabel}</span>가 가장 심각합니다.`;
 
   // 메인 결과 카드
-  card.classList.add('ta-results');
-  card.setAttribute('data-section', 'upload-analyze');
+  card.classList.add("ta-results");
+  card.setAttribute("data-section", "upload-analyze");
   card.innerHTML = `
     <div class="res-1">
       <div class="res-1-a"><span class="res-title">분석 결과</span></div>
@@ -647,84 +742,101 @@ function swapToResults(ratios) {
   `;
 
   // ✅ 사진별 분석 카드
-  const perImageCard = document.createElement('section');
-  perImageCard.className = 'ta-card ta-results';
-  perImageCard.setAttribute('data-section', 'upload-analyze');
-  perImageCard.dataset.subsection = 'per-image';
-  perImageCard.id = 'perImageResultsCard';
+  const perImageCard = document.createElement("section");
+  perImageCard.className = "ta-card ta-results";
+  perImageCard.setAttribute("data-section", "upload-analyze");
+  perImageCard.dataset.subsection = "per-image";
+  perImageCard.id = "perImageResultsCard";
   perImageCard.innerHTML = `
     <div class="res-1">
       <div class="res-1-a"><span class="res-title">사진별 분석</span></div>
     </div>`;
-  card.insertAdjacentElement('afterend', perImageCard);
+  card.insertAdjacentElement("afterend", perImageCard);
 
   // ✅ 사진별 상세 블록
   const buildDetailBlock = (idx) => {
     const imgInfo = perImageArr[idx] || {};
-    const src = imgInfo.input || imgInfo.output || '';
+    const src = imgInfo.input || imgInfo.output || "";
 
-    const statusGood = imgInfo.status === '양호';
-    const statusText = statusGood ? '양호' : '불량';
+    const statusGood = imgInfo.status === "양호";
+    const statusText = statusGood ? "양호" : "불량";
 
     const causeRows =
       !statusGood && Array.isArray(imgInfo.causes) && imgInfo.causes.length
-        ? imgInfo.causes.map((c, i) => `
+        ? imgInfo.causes
+            .map(
+              (c, i) => `
             <div class="legend-row slim">
               <span class="legend-rank">#${i + 1}</span>
               <span class="legend-label">${c}</span>
-            </div>`).join('')
-        : '';
+            </div>`
+            )
+            .join("")
+        : "";
 
     return `
       <div class="res-2 perimage-hero">
         <div class="perimage-photo">
-          ${src ? `<img src="${src}" alt="업로드 이미지 ${idx + 1}" />` : ''}
+          ${src ? `<img src="${src}" alt="업로드 이미지 ${idx + 1}" />` : ""}
         </div>
         <div class="perimage-side">
-          <div class="status-value ${statusGood ? 'is-good' : 'is-bad'}">${statusText}</div>
-          ${causeRows ? `<div class="perimage-causes">${causeRows}</div>` : ''}
+          <div class="status-value ${
+            statusGood ? "is-good" : "is-bad"
+          }">${statusText}</div>
+          ${causeRows ? `<div class="perimage-causes">${causeRows}</div>` : ""}
         </div>
       </div>`;
   };
 
   // ✅ 썸네일 목록
   const buildThumbs = () => {
-    if (!perImageArr.length) return '';
-    const items = perImageArr.map((img, i) => `
-      <button class="perimage-thumb ${i === 0 ? 'is-active' : ''}" data-index="${i}">
-        ${img.input ? `<img src="${img.input}" alt="썸네일 ${i + 1}" />` : ''}
-      </button>`).join('');
+    if (!perImageArr.length) return "";
+    const items = perImageArr
+      .map(
+        (img, i) => `
+      <button class="perimage-thumb ${
+        i === 0 ? "is-active" : ""
+      }" data-index="${i}">
+        ${img.input ? `<img src="${img.input}" alt="썸네일 ${i + 1}" />` : ""}
+      </button>`
+      )
+      .join("");
     return `<div class="res-3 perimage-thumbs">${items}</div>`;
   };
 
   // 초기 렌더
   if (perImageArr.length) {
-    perImageCard.insertAdjacentHTML('beforeend', buildDetailBlock(0));
-    perImageCard.insertAdjacentHTML('beforeend', buildThumbs());
+    perImageCard.insertAdjacentHTML("beforeend", buildDetailBlock(0));
+    perImageCard.insertAdjacentHTML("beforeend", buildThumbs());
   } else {
-    perImageCard.insertAdjacentHTML('beforeend', `<p style="color:#ccc;">📁 분석된 이미지가 없습니다.</p>`);
+    perImageCard.insertAdjacentHTML(
+      "beforeend",
+      `<p style="color:#ccc;">📁 분석된 이미지가 없습니다.</p>`
+    );
   }
 
   // ✅ 썸네일 클릭 이벤트
-  perImageCard.addEventListener('click', (e) => {
-    const btn = e.target.closest('.perimage-thumb');
+  perImageCard.addEventListener("click", (e) => {
+    const btn = e.target.closest(".perimage-thumb");
     if (!btn) return;
     const idx = Number(btn.dataset.index);
 
     // 썸네일 선택 표시 갱신
-    perImageCard.querySelectorAll('.perimage-thumb').forEach(b => b.classList.remove('is-active'));
-    btn.classList.add('is-active');
+    perImageCard
+      .querySelectorAll(".perimage-thumb")
+      .forEach((b) => b.classList.remove("is-active"));
+    btn.classList.add("is-active");
 
     // 기존 큰 이미지 영역 제거
-    const prev = perImageCard.querySelector('.perimage-hero');
+    const prev = perImageCard.querySelector(".perimage-hero");
     if (prev) prev.remove();
 
     // 새 이미지 블록을 썸네일 영역 "앞"에 삽입
-    const thumbs = perImageCard.querySelector('.perimage-thumbs');
+    const thumbs = perImageCard.querySelector(".perimage-thumbs");
     if (thumbs) {
-      thumbs.insertAdjacentHTML('beforebegin', buildDetailBlock(idx));
+      thumbs.insertAdjacentHTML("beforebegin", buildDetailBlock(idx));
     } else {
-      perImageCard.insertAdjacentHTML('beforeend', buildDetailBlock(idx));
+      perImageCard.insertAdjacentHTML("beforeend", buildDetailBlock(idx));
     }
   });
 
@@ -749,40 +861,41 @@ function swapToResults(ratios) {
   }
 
   // 왼쪽 도넛 (양호/불량)
-  const donutLeft = card.querySelector('.donut2');
+  const donutLeft = card.querySelector(".donut2");
   if (donutLeft) {
-    donutLeft.addEventListener('mousemove', (e) => {
+    donutLeft.addEventListener("mousemove", (e) => {
       const rect = donutLeft.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
       const dx = e.clientX - cx;
       const dy = e.clientY - cy;
-      const angle = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360;
+      const angle = ((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360;
 
-      const text = angle < (goodPct / 100 * 360)
-        ? '양호: ' + goodPct + '%'
-        : '불량: ' + badPct + '%';
+      const text =
+        angle < (goodPct / 100) * 360
+          ? "양호: " + goodPct + "%"
+          : "불량: " + badPct + "%";
       showTooltip(e.clientX, e.clientY, text);
     });
-    donutLeft.addEventListener('mouseleave', hideTooltip);
+    donutLeft.addEventListener("mouseleave", hideTooltip);
   }
 
   // 오른쪽 도넛 (손상 원인)
-  const donutRight = card.querySelector('.donutN');
+  const donutRight = card.querySelector(".donutN");
   if (donutRight && ranked.length) {
-    donutRight.addEventListener('mousemove', (e) => {
+    donutRight.addEventListener("mousemove", (e) => {
       const rect = donutRight.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
       const dx = e.clientX - cx;
       const dy = e.clientY - cy;
-      const angle = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360;
+      const angle = ((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360;
 
       // 각 손상 원인 비율 범위 계산
       let acc = 0;
-      let hovered = ranked.find(s => {
+      let hovered = ranked.find((s) => {
         const start = acc;
-        const end = acc + (s.pct / 100 * 360);
+        const end = acc + (s.pct / 100) * 360;
         acc = end;
         return angle >= start && angle < end;
       });
@@ -793,34 +906,34 @@ function swapToResults(ratios) {
         hideTooltip();
       }
     });
-    donutRight.addEventListener('mouseleave', hideTooltip);
+    donutRight.addEventListener("mouseleave", hideTooltip);
   }
 }
 
 function consumeAnalyzeResponse(data) {
-  console.log('[RAW]', data);
+  console.log("[RAW]", data);
 
   // ==============================
   // ① 형식 B: 백에서 직접 overall / causes 제공 시 (즉시 도넛 그릴 수 있는 형식)
   // ==============================
   const overall = data?.overall || data?.response?.overall;
-  const causes  = data?.causes  || data?.response?.causes;
+  const causes = data?.causes || data?.response?.causes;
 
   if (overall && Array.isArray(causes)) {
-    console.log('[🟢 형식 B 감지] overall / causes 기반');
+    console.log("[🟢 형식 B 감지] overall / causes 기반");
 
     const good = Number(overall.goodPct ?? 0);
-    const bad  = Number(overall.badPct  ?? 0);
+    const bad = Number(overall.badPct ?? 0);
 
-    const segments = causes.map(c => ({
-      label: String(c.label ?? '-'),
-      value: Number(c.pct ?? 0),   // swapToResults 내부에서 정규화
+    const segments = causes.map((c) => ({
+      label: String(c.label ?? "-"),
+      value: Number(c.pct ?? 0), // swapToResults 내부에서 정규화
       color: c.color || undefined,
       valueColor: c.color || undefined,
     }));
 
     // 전체 요약 저장 (사진별 데이터는 없으므로 빈 배열)
-    window._lastSummary     = { good, bad, segments };
+    window._lastSummary = { good, bad, segments };
     window._lastPerImageArr = [];
 
     swapToResults({ good, bad, segments });
@@ -833,23 +946,28 @@ function consumeAnalyzeResponse(data) {
   console.log("[🟣 consumeAnalyzeResponse] 원본 데이터:", data);
 
   const { parsed } = extractParsedLambdaResult(data);
-  if (parsed && (Array.isArray(parsed) || typeof parsed === 'object')) {
-    const summary = summarizeLambdaResult(parsed, { useTop1PerImage:false, confThresh:0.3 });
+  if (parsed && (Array.isArray(parsed) || typeof parsed === "object")) {
+    const summary = summarizeLambdaResult(parsed, {
+      useTop1PerImage: false,
+      confThresh: 0.3,
+    });
 
     console.log("[🟢 summary 결과]:", summary);
 
     // 📦 전역 보관 (사진별 분석에서도 사용)
-    window._lastSummary     = summary;
-    window._lastPerImageArr = Array.isArray(summary.perImage) ? summary.perImage : [];
+    window._lastSummary = summary;
+    window._lastPerImageArr = Array.isArray(summary.perImage)
+      ? summary.perImage
+      : [];
 
     // 도넛 및 손상 원인 반영
     swapToResults({
       good: summary.goodPct,
-      bad:  summary.badPct,
-      segments: summary.segments.map(s => ({
+      bad: summary.badPct,
+      segments: summary.segments.map((s) => ({
         label: s.label,
-        value: s.value
-      }))
+        value: s.value,
+      })),
     });
     return;
   }
@@ -870,15 +988,17 @@ function consumeAnalyzeResponse(data) {
  */
 async function waitForFullResults(userId, expectedCount, intervalMs = 3000) {
   let lastCount = 0;
-  let lastProgressAt = Date.now();      // 진행 시각 초기화
-  const MAX_IDLE_MS = 120000;           // 필요시 조정(120초)
+  let lastProgressAt = Date.now(); // 진행 시각 초기화
+  const MAX_IDLE_MS = 120000; // 필요시 조정(120초)
   let tries = 0;
   const statusEl = ensureStatusEl();
 
   while (true) {
     tries++;
 
-    const url = `${HOST}${RESULT_PATH}?userId=${encodeURIComponent(userId)}&_ts=${Date.now()}`;
+    const url = `${HOST}${RESULT_PATH}?userId=${encodeURIComponent(
+      userId
+    )}&_ts=${Date.now()}`;
     console.log("[RES] URL:", url);
 
     // ---- (A) 네트워크 요청 & 원문 로깅 ----
@@ -896,22 +1016,39 @@ async function waitForFullResults(userId, expectedCount, intervalMs = 3000) {
       throw new Error(`/images/result 응답 JSON 파싱 실패`);
     }
     if (!res.ok || data?.success === false) {
-      const msg = data?.apiError || data?.message || raw || `HTTP ${res.status}`;
+      const msg =
+        data?.apiError || data?.message || raw || `HTTP ${res.status}`;
       throw new Error(msg);
     }
 
     // ---- (C) 응답 형태 탐색 로그 ----
     const resp = data?.response;
-    console.log("[RES] typeof response:", Array.isArray(resp) ? "array" : typeof resp);
-    console.log("[RES] keys(response):", resp && !Array.isArray(resp) ? Object.keys(resp) : null);
+    console.log(
+      "[RES] typeof response:",
+      Array.isArray(resp) ? "array" : typeof resp
+    );
+    console.log(
+      "[RES] keys(response):",
+      resp && !Array.isArray(resp) ? Object.keys(resp) : null
+    );
     console.log("[RES] typeof lambdaResult:", typeof resp?.lambdaResult);
-    console.log("[RES] lambdaResult sample:", (resp?.lambdaResult || "").slice(0, 120));
+    console.log(
+      "[RES] lambdaResult sample:",
+      (resp?.lambdaResult || "").slice(0, 120)
+    );
 
-    console.log("🔎 current /images/result body:", JSON.stringify(data, null, 2));
+    console.log(
+      "🔎 current /images/result body:",
+      JSON.stringify(data, null, 2)
+    );
 
     // ---- (D) 표준화 파싱 + 카운트 ----
     const { parsed, count } = extractParsedLambdaResult(data);
-    console.log(`[RES] parsedType=${Array.isArray(parsed) ? "array" : typeof parsed}, count=${count}/${expectedCount}, try=${tries}`);
+    console.log(
+      `[RES] parsedType=${
+        Array.isArray(parsed) ? "array" : typeof parsed
+      }, count=${count}/${expectedCount}, try=${tries}`
+    );
 
     if (statusEl) {
       statusEl.innerHTML = `<span class="dot"></span> 결과를 수신 중… (${count}/${expectedCount})`;
@@ -933,38 +1070,62 @@ async function waitForFullResults(userId, expectedCount, intervalMs = 3000) {
     // 3회 연속 0건이면 재트리거(선택)
     if (lastCount === 0 && tries === 3) {
       console.warn("⚠️ no progress x3 → re-trigger analyze");
-      try { await callAnalyze(userId, uploadedImageIds); } catch (e) { console.error("❌ re-trigger failed:", e); }
+      try {
+        await callAnalyze(userId, uploadedImageIds);
+      } catch (e) {
+        console.error("❌ re-trigger failed:", e);
+      }
       lastProgressAt = Date.now();
     }
 
     // 정체 타임아웃
     if (Date.now() - lastProgressAt > MAX_IDLE_MS) {
-      throw new Error(`결과가 ${Math.round(MAX_IDLE_MS/1000)}초 동안 갱신되지 않았어요. 서버 상태를 확인해 주세요.`);
+      throw new Error(
+        `결과가 ${Math.round(
+          MAX_IDLE_MS / 1000
+        )}초 동안 갱신되지 않았어요. 서버 상태를 확인해 주세요.`
+      );
     }
 
-    await new Promise(r => setTimeout(r, intervalMs));
+    await new Promise((r) => setTimeout(r, intervalMs));
   }
 }
 
 // 1) 팔레트
-const SEGMENT_PALETTE = ['#63DB1F', '#FFD15C', '#FF6B6B', '#7AC6FF', '#B48CFF', '#FF9EC1'];
+const SEGMENT_PALETTE = [
+  "#63DB1F",
+  "#FFD15C",
+  "#FF6B6B",
+  "#7AC6FF",
+  "#B48CFF",
+  "#FF9EC1",
+];
 
 // 2) 정규화
 function normalizeSegments(segments = []) {
   const arr = segments.map((s, idx) => {
-    const label = String(s?.label ?? '-');
+    const label = String(s?.label ?? "-");
     const value = Math.max(0, Number(s?.value ?? 0)) || 0;
     const color = s?.color || SEGMENT_PALETTE[idx % SEGMENT_PALETTE.length];
     const valueColor = s?.valueColor || color;
     return { label, value, color, valueColor };
   });
-  const sum = arr.reduce((a,b)=>a+b.value, 0);
+  const sum = arr.reduce((a, b) => a + b.value, 0);
   if (!arr.length || sum === 0) {
-    return [{ label:'데이터 없음', value:1, color:'#666', valueColor:'#666', pct:100 }];
+    return [
+      {
+        label: "데이터 없음",
+        value: 1,
+        color: "#666",
+        valueColor: "#666",
+        pct: 100,
+      },
+    ];
   }
   let remain = 100;
-  return arr.map((s,i)=>{
-    const pct = (i===arr.length-1) ? remain : Math.round((s.value/sum)*100);
+  return arr.map((s, i) => {
+    const pct =
+      i === arr.length - 1 ? remain : Math.round((s.value / sum) * 100);
     remain -= pct;
     return { ...s, pct };
   });
@@ -973,16 +1134,16 @@ function normalizeSegments(segments = []) {
 // 3) conic-gradient
 function buildConicGradient(segmentsWithPct) {
   let acc = 0;
-  const stops = segmentsWithPct.map(s => {
+  const stops = segmentsWithPct.map((s) => {
     const start = acc;
     const end = acc + s.pct;
     acc = end;
     return `${s.color} ${start}% ${end}%`;
   });
-  return `conic-gradient(${stops.join(', ')})`;
+  return `conic-gradient(${stops.join(", ")})`;
 }
 
 // ✅ 강제 프리뷰 제거: DOMContentLoaded에서 결과 미리 렌더하지 않음
-document.addEventListener('DOMContentLoaded', () => {
-  if (typeof renderInitialUI === 'function') renderInitialUI();
+document.addEventListener("DOMContentLoaded", () => {
+  if (typeof renderInitialUI === "function") renderInitialUI();
 });
