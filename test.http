@@ -1,0 +1,8 @@
+### A) imageIdStrings
+POST http://13.125.81.117:8080/images/analyze?userId=<USER_ID>
+Content-Type: application/json
+
+{
+  "userId": "<USER_ID>",
+  "imageIdStrings": ["<ID1>", "<ID2>", "<ID3>"]
+}

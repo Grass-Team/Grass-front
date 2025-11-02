@@ -2,14 +2,12 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, maximum-scale=1"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>TurfAnalyser</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/pretendard@latest/dist/web/variable/pretendardvariable-dynamic-subset.css">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -29,7 +27,7 @@
     <section class="ta-section" aria-labelledby="hero-title">
       <div class="ta-flex-col">
         <div class="ta-hero">
-          <div class="ta-hero-bg" aria-hidden="true"></div>
+          <!-- 오버레이 제거됨: .ta-hero-bg 삭제 -->
 
           <div class="ta-hero-copy">
             <h1 id="hero-title" class="ta-hero-title">잔디 컨디션,<br> 업로드 한 번에 체크</h1>
@@ -42,7 +40,6 @@
                           stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </div>
-
                 <p class="ta-step-text">운동장 잔디 사진을 업로드하세요</p>
               </li>
               <li class="ta-step">
@@ -76,79 +73,47 @@
         <!-- 하단 블록 -->
         <div class="ta-block">
           <div class="ta-cards">
-            <!-- 왼쪽 카드: ① 이미지 올리기 + ② 분석 요청 보내기 (두 컬럼) -->
             <section class="ta-card" data-section="upload-analyze" aria-labelledby="upload-analyze-title">
-              <div class="ta-card-head">
-                <h3 id="upload-analyze-title" class="ta-card-title">🖼️ 이미지 업로드</h3>
+              <div class="ta-group ta-group-1">
+                <p class="ta-kicker">분석할 잔디 이미지를 업로드 해주세요❕</p>
+                <p class="ta-sub">최대 10장 업로드 가능</p>
               </div>
 
-              <div class="ta-list-wrap">
-              <!-- ① 이미지 올리기 -->
-              <div class="ta-col">
-                <div class="ta-row-item">
-                  <input id="files" type="file" accept="image/*" multiple />
-                </div>
+              <div class="ta-group ta-group-2">
+                <p class="ta-note">정확한 분석을 위해 이미지를 여러 장 업로드해주세요.</p>
+                <p class="ta-note">이미지 수가 많을수록 분석 정확도가 높아집니다.</p>
               </div>
 
-              <!-- 업로드 로딩/완료 표시 -->
-              <div class="ta-row-item">
-                <div id="uploadProgress" class="upload-status is-idle" aria-live="polite">
-                  <span class="spinner" aria-hidden="true"></span>
-                  <span class="status-text">한 번에 여러 개의 파일을 업로드 할 수 있습니다.</span>
-                </div>
-              </div>
+              <div class="ta-group ta-group-3">
+                <p id="uploadStatus" class="ta-status"></p>
 
-              <!-- ② 분석 요청 보내기 -->
-              <div class="ta-col">
-                <div class="ta-row-item" style="border-top:none; gap:12px;">
-                  <button id="btnAnalyze" class="btn accent" type="button" disabled>분석 시작</button>
-                </div>
-              </div>
-            </div>
-          </section>
-
-            <!-- 오른쪽 카드: 처리 기록 -->
-            <section class="ta-card" data-section="log" aria-labelledby="log-title">
-              <div class="ta-card-head">
-                <h3 id="log-title" class="ta-card-title">🗂️ 처리 기록</h3>
-              </div>
-              <div class="ta-row-item" style="width:100%;">
-                <pre id="log" class="log" style="width:100%; max-height:260px; overflow:auto;" aria-live="polite"></pre>
+                <input id="fileInput" type="file" accept="image/*" multiple hidden />
+                <button id="btnUpload" class="btn" type="button">이미지 업로드</button>
               </div>
             </section>
+
+            <template id="tpl-result">
+              <div class="res-1">
+                <div class="res-1-a">☘️ 분석 결과</div>
+                <div class="res-1-b">
+                  <div class="res-1-b-a">
+                    <div class="donut"></div>
+                    <div class="donut-label">잔디 상태</div>
+                    <div class="donut-legend"></div>
+                  </div>
+                  <div class="res-1-b-b"></div>
+                </div>
+              </div>
+            </template>
+
           </div>
         </div>
-
-        <!-- 3) 분석 결과 보기 (성공 시 표시) -->
-        <section id="resultSection" class="ta-card" style="display:none;" aria-labelledby="result-title" data-section="results">
-          <div class="ta-card-head">
-            <h3 id="result-title" class="ta-card-title">3) 분석 결과 보기</h3>
-            <div class="ta-collapse-24" aria-hidden="true"><div class="bar"></div></div>
-          </div>
-
-          <div class="ta-row" style="gap:12px; padding:8px 0 16px;">
-            <button id="btnResult" class="btn" type="button">결과 새로고침</button>
-            <span id="resultStatus" class="ta-text" style="margin-left:auto;"></span>
-          </div>
-
-          <div class="table-wrap">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th scope="col">이미지 ID</th>
-                  <th scope="col">손상 판단</th>
-                </tr>
-              </thead>
-              <tbody id="resultBody"></tbody>
-            </table>
-          </div>
-        </section>
 
         <div class="ta-footer" aria-hidden="true"></div>
       </div>
     </section>
   </div>
-
+  <div id="chartTooltip" class="chart-tooltip" hidden></div>
   <script src="script.js"></script>
 </body>
 </html>
